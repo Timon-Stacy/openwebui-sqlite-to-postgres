@@ -1,0 +1,60 @@
+# --- Secrets & local config ---
+.env
+.env.local
+.env.*.local
+# site-specific examples are personal; only .env.example is shared
+.env.*.example
+!.env.example
+
+# --- Personal / site-specific (not for the public repo) ---
+deploy.sh
+
+# --- SQLite data (never commit production or migration copies) ---
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# --- Migration working directory ---
+work/
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+.Python
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Docker (local overrides / build artifacts) ---
+docker-compose.override.yml
+docker-compose.local.yml
+
+# --- OS & editors ---
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+.idea/
+.vscode/
+*.code-workspace
+
+# --- pgloader temp files ---
+*.load.bak
