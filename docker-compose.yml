@@ -1,0 +1,84 @@
+# Self-contained stack: PostgreSQL + Open WebUI + the migrator.
+#
+# Open WebUI owns the schema (data-only migration), so the flow is:
+#   1. docker compose up -d postgres open-webui    # Open WebUI builds the schema
+#   2. docker compose stop open-webui              # stop it before migrating
+#   3. docker compose build migrator
+#      docker compose --profile tools run --rm migrator check-pg
+#      docker compose --profile tools run --rm migrator migrate-python
+#   4. docker compose up -d open-webui             # back online, with your data
+
+services:
+  postgres:
+    container_name: migration_pg
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: openwebui
+    volumes:
+      - postgres-v:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d openwebui"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    networks:
+      - ainet
+
+  # Start this once so Alembic builds every table, then STOP it before migrating —
+  # it must not hold the database while the migrator copies data in.
+  open-webui:
+    image: ${OPENWEBUI_IMAGE:-ghcr.io/open-webui/open-webui:main}
+    container_name: open_webui
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@migration_pg:5432/openwebui
+    volumes:
+      - open-webui-v:/app/backend/data
+    ports:
+      - "${OPENWEBUI_PORT:-3000}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ainet
+
+  migrator:
+    build:
+      context: .
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.12-slim-bookworm}
+    image: openwebui-migrator:local
+    container_name: openwebui_migrator
+    profiles: ["tools"]
+    working_dir: /app
+    volumes:
+      - .:/data
+    environment:
+      # Defaults to the bundled postgres service; override in .env for any target.
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@migration_pg:5432/openwebui}
+      SOURCE_SQLITE: /data/webui.db
+      WORK_DIR: /data/work
+      CLEAN_SQLITE: /data/work/webui-clean.db
+      PG_CONTAINER: ""
+      BATCH_SIZE: "5000"
+      NON_INTERACTIVE: "0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Run the live, mounted copy so edits apply without rebuilding the image.
+    entrypoint: ["/data/openwebui-migrate.sh"]
+    command: ["help"]
+    networks:
+      - ainet
+
+volumes:
+  postgres-v:
+  open-webui-v:
+
+networks:
+  ainet:
