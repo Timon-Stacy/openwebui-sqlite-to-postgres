@@ -261,11 +261,13 @@ The target table already contains rows (Open WebUI seeds some on first boot, or 
 
 ## 🤝 Contributing
 
-Issues and PRs are welcome! Helpful contributions:
+**Contributions are welcome and encouraged** — no need to ask first. Issues, PRs, docs, and real-world migration reports are all appreciated. Helpful contributions:
 
 - Support for newer Open WebUI tables/columns (update `TABLE_ORDER` / `TABLE_DEPS`).
 - Tested results against more PostgreSQL versions.
 - Docs and real-world migration notes.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup, how to test, and the PR process.
 
 ---
 
