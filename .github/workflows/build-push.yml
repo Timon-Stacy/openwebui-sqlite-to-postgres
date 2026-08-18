@@ -78,7 +78,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker run --rm "${{ steps.meta.outputs.ci_tag }}" help
+          docker run --rm \
+            -e DATABASE_URL=postgresql://smoke:smoke@127.0.0.1:5432/smoke \
+            "${{ steps.meta.outputs.ci_tag }}" help
 
       - name: Scan local image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
